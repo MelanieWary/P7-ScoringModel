@@ -5,10 +5,10 @@ import pandas as pd
 import numpy as np
 import joblib
 import shap
-from textwrap import wrap
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+# st.set_page_config(layout="wide")
 
 # loading some of the necessary files / data
 X_test_notscaled = pd.read_csv('X_test.csv')
@@ -100,9 +100,9 @@ col3.markdown(outcome, unsafe_allow_html=True)
 
 # ##### Below the 3 columns, display the corresponding shap force plot
 st.write(''' ''')
-st.write('##### -------------------------------------- '
+st.write('###### ---------------------------------------------------- '
          'Why such a probability: '
-         '--------------------------------------')
+         '----------------------------------------------------')
 
 # SHAP_base_value --> defined above
 # shap_values --> loaded above
@@ -124,9 +124,43 @@ shap_plot = shap.force_plot(SHAP_base_value,
 st_shap(shap_plot, 120)
 
 
-# ########### Client's data section ############
+# ########### Client's data + comparison section ############
+st.write(''' ''')
 st.write('''***''')
-st.header('*Client\'s data*')
+st.write(''' ''')
+col1, col_empty, col2 = st.columns([0.35, 0.15, 0.5])
+col1.header('*Client\'s data...*')
+with col1.expander("Notes"):
+    st.write('''
+    ``nan`` _indicates that data are not available / have not been provided_
+    ''')
+    if datatype == 'Top5 increasing the client\'s score':
+        st.write('''
+        > __DATA ORDER:__
+        >
+        > _from top:_ increasing the score the most
+        >
+        > _to bottom:_ increasing the score the least
+        ''')
+    if datatype == 'Top5 decreasing the client\'s score':
+        st.write('''
+        > __DATA ORDER:__
+        >
+        > _from top:_ decreasing the score the most
+        >
+        > _to bottom:_ decreasing the score the least
+        ''')
+col2.header('*... compared with those of other clients*')
+with col2.expander("Notes"):
+    st.write('''
+    _boxes extend from first to third quartiles while whiskers
+    cover the whole range of the data of each group (loan granted vs not granted);
+    the horizontal line represents the median value;
+    the white dot represents the mean value._
+    ''')
+
+
+# ## Defining client's data ##
 
 # reduce data to those of the client
 df = X_test_notscaled_renamed[X_test_notscaled_renamed['SK_ID_CURR'] == IDclient]
@@ -137,13 +171,13 @@ if datatype == 'Top5 increasing the client\'s score':
     highest_var = [shap_data.columns[idx] for idx in highest_var_idx]
     df_ = df[highest_var]
     df__ = df_.copy()
-    st.write('''*(left) increasing the most  >>>  (right) increasing the least*''')
+    col1.text('Data are ordered (see Notes)')
 if datatype == 'Top5 decreasing the client\'s score':
     lowest_var_idx = np.argsort(shap_values[client_row])[::-1][-5:][::-1]
     lowest_var = [shap_data.columns[idx] for idx in lowest_var_idx]
     df_ = df[lowest_var]
     df__ = df_.copy()
-    st.write('''*(left) decreasing the most  >>>  (right) decreasing the least*''')
+    col1.text('Data are ordered (see Notes)')
 if datatype == 'General information':
     df_ = df[['NEW_AGE',
               'NEW_DAYS_EMPLOYED_PERC',
@@ -152,10 +186,10 @@ if datatype == 'General information':
               'NEW_PROD_CRED_SALARY']]
     df__ = df_.copy()
     df__.columns = ['Age',
-                   'Employment relative duration',
-                   'Loan amount',
-                   'Loan to good Value Ratio',
-                   '(Good value - Loan amount) / Income']
+                    'Employment relative duration',
+                    'Loan amount',
+                    'Loan to good Value Ratio',
+                    '(Good value - Loan amount) / Income']
 if datatype == 'External source scores':
     df_ = df[['EXT_SOURCE_1',
               'EXT_SOURCE_2',
@@ -164,10 +198,10 @@ if datatype == 'External source scores':
               'NEW_EXT_SOURCE_STD']]
     df__ = df_.copy()
     df__.columns = ['Score banque1',
-                   'Score banque2',
-                   'Score banque3',
-                   'Mean',
-                   'Standard deviation']
+                    'Score banque2',
+                    'Score banque3',
+                    'Mean',
+                    'Standard deviation']
 if datatype == 'Previous applications from other banks':
     df_ = df[['BURO_DAYS_CREDIT__min',
               'BURO_DAYS_CREDIT__max',
@@ -177,11 +211,11 @@ if datatype == 'Previous applications from other banks':
               'BURO_CREDIT_ACTIVE_Closed__count__max']]
     df__ = df_.copy()
     df__.columns = ['First application (days ago)',
-                   'Last application (days ago)',
-                   'Shortest loan remaining duration',
-                   'Longest Loan remaining duration',
-                   'Nb of active credits',
-                   'Nb of closed credits']
+                    'Last application (days ago)',
+                    'Shortest loan remaining duration',
+                    'Longest Loan remaining duration',
+                    'Nb of active credits',
+                    'Nb of closed credits']
 if datatype == 'Previous applications from our bank':
     df_ = df[['PREV_AMT_ANNUITY__min',
               'PREV_AMT_ANNUITY__max',
@@ -194,22 +228,22 @@ if datatype == 'Previous applications from our bank':
               'prevREFUSED_APP_LVR__min']]
     df__ = df_.copy()
     df__.columns = ['Previous minimal annuity',
-                   'Previous maximal annuity',
-                   'Longest term of previous credits',
-                   'Mean term of previous credit',
-                   'Mean rate of granted credits',
-                   'Minimal previous loan to good ratio',
-                   'Maximal previous loan to good ratio',
-                   'Highest previous loan to good ratio approved',
-                   'Lowest previous loan to good ratio refused']
+                    'Previous maximal annuity',
+                    'Longest term of previous credits',
+                    'Mean term of previous credit',
+                    'Mean rate of granted credits',
+                    'Minimal previous loan to good ratio',
+                    'Maximal previous loan to good ratio',
+                    'Highest previous loan to good ratio approved',
+                    'Lowest previous loan to good ratio refused']
 if datatype == 'Previous credits from our bank':
     df_ = df[['POS_COUNT',
               'INSTAL_PAYMENT_DIFF__mean',
               'INSTAL_PAYMENT_DIFF__sum']]
     df__ = df_.copy()
     df__.columns = ['Nb of previous loans',
-                   'Mean diff. of installment due vs installment paid',
-                   'Total diff. of installment due vs installment paid']
+                    'Mean diff. of installment due vs installment paid',
+                    'Total diff. of installment due vs installment paid']
 if datatype == 'Credit Card information':
     df_ = df[['CC_COUNT',
               'CC_AMT_DRAWINGS_CURRENT__mean',
@@ -220,20 +254,15 @@ if datatype == 'Credit Card information':
               'CC_CNT_DRAWINGS_CURRENT__std']]
     df__ = df_.copy()
     df__.columns = ['Nb of credit card lines',
-                   'Mean monthly drawing amount',
-                   'Standard deviation monthly drawing amount',
-                   'Mean total amount receivable',
-                   'Stadard deviation total amount receivable',
-                   'Mean nb of monthly drawings',
-                   'Standard deviation of nb of monthly drawings']
-df__ = df__.set_index([pd.Index([IDclient])])
-st.write(df__)
-st.write('''_**Note**: <NA> indicates that data are not available / have not been provided_''')
+                    'Mean monthly drawing amount',
+                    'Standard deviation monthly drawing amount',
+                    'Mean total amount receivable',
+                    'Stadard deviation total amount receivable',
+                    'Mean nb of monthly drawings',
+                    'Standard deviation of nb of monthly drawings']
 
 
-# ########### Comparison section ############
-st.write('''***''')
-st.header('*Comparison with other clients*')
+# ##Defining data for comparison##
 
 # Predict classes according to threshold for all clients
 pred_class = predict_class(X_test_notscaled)
@@ -247,15 +276,17 @@ data_comp = pd.concat([data_comp, pd.Series(pred_class, name='pred_proba')], axi
 # replace pred_proba value by 'client(ID)' for the selected client
 data_comp.loc[client_row, 'pred_proba'] = 'Client ({})'.format(IDclient)
 
-# Build the plot
-total_cols = data_comp.shape[1]-1
-total_rows = 1
-fig, axs = plt.subplots(nrows=total_rows, ncols=total_cols,
-                        figsize=(5 * total_cols, 5 * total_rows), constrained_layout=True)
-for i, var in enumerate(df_.columns):
-    pos = i % total_cols
-    plot = sns.boxplot(x='pred_proba', y=var, data=data_comp,
-                       ax=axs[pos],
+
+# Function to build the plot
+def make_plot(i):
+    '''Function to build the plot
+    that compares data's client
+    to those of (1) client whose
+    loan was granted and (2) clients
+    whose loan was not granted
+    parameters ``i`` refers to column index'''
+    fig, ax = plt.subplots(figsize=(6, 3.5))
+    ax = sns.boxplot(x='pred_proba', y=data_comp.columns[i], data=data_comp,
                        order=['loan granted',
                               'Client ({})'.format(IDclient),
                               'loan not granted'],
@@ -270,21 +301,31 @@ for i, var in enumerate(df_.columns):
                                   'markersize': 10,
                                   'markeredgecolor': 'black',
                                   'markerfacecolor': 'white'}
-                       )
-    plot.set_title('\n'.join(wrap(df__.columns[i], 20)),
-                   fontsize=26, fontweight='bold')
-    plot.set_xlabel('')
-    plot.set_ylabel('')
-    plot.set_xticklabels(['Loan\ngranted',
-                          'Client\n({})'.format(IDclient),
-                          'Loan\nnot\ngranted'],
-                         fontsize=20)
+                     )
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    plt.draw()
+    ax.set_yticklabels(labels=ax.get_yticklabels(), fontsize=16)
+    ax.set_xticklabels(['Loan\ngranted',
+                        'Client\n({})'.format(IDclient),
+                        'Loan not\ngranted'],
+                       fontsize=16)
+    return fig
 
-# display the plot
-st.write(fig)
-st.write('''_**Notes**:_
-_boxes extend from the first to third quartiles of the data of each group (loan granted vs not granted);_
-_the horizontal line represents the median value;_
-_the white dot represents the mean value;_
-_the whiskers cover the whole range of data for each group._
-''')
+
+# ##Display##
+for i in range(df__.shape[1]):
+    col1, col_empty, col2, col_empty2 = st.columns([0.3, 0.25, 0.4, 0.05])
+    col1.write('''######  \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_''')
+    if ((datatype == 'Top5 increasing the client\'s score'
+         or datatype == 'Top5 decreasing the client\'s score')
+            and len(df__.columns[i]) > 25):
+        col1.write('''###### {}'''.format(df__.columns[i][:20]))
+        col1.write('''###### {}'''.format(df__.columns[i][20:]))
+    else:
+        col1.write('''###### {}'''.format(df__.columns[i]))
+    col1.metric(label='',
+                value=round(float(df__.iloc[0, i]), 2),
+                delta=None)
+    col2.write(''' ''')
+    col2.write(make_plot(i))
